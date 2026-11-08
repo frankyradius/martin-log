@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>บันทึกมาร์ติน</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:var(--tg-theme-bg-color,#fff);--text:var(--tg-theme-text-color,#000);--hint:var(--tg-theme-hint-color,#8a8a8a);
+  --link:var(--tg-theme-link-color,#2481cc);--btn:var(--tg-theme-button-color,#2481cc);--btn-text:var(--tg-theme-button-text-color,#fff);
+  --card:var(--tg-theme-secondary-bg-color,#f2f2f5);--line:color-mix(in srgb,var(--hint) 30%,transparent);
+  --milk:#1D9E75;--pee:#378ADD;--poo:#D85A30;--ok:#3B8A2E;--low:#C77700;
+  --ok-bg:color-mix(in srgb,var(--ok) 16%,transparent);--low-bg:color-mix(in srgb,var(--low) 18%,transparent);
+}
+@media (prefers-color-scheme:dark){:root:not(.tg){--bg:#17212b;--text:#f5f5f5;--hint:#708499;--card:#232e3c;--link:#6ab3f3;--btn:#5288c1}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 -apple-system,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;-webkit-tap-highlight-color:transparent}
+main{max-width:520px;margin:0 auto;padding:12px 14px 40px}
+.top{display:flex;justify-content:space-between;align-items:baseline}
+.top b{font-size:18px;font-weight:600}.hint{color:var(--hint);font-size:12px}
+.chips{display:flex;gap:6px;overflow-x:auto;margin:10px -14px 12px;padding:0 14px;scrollbar-width:none}
+.chip{flex:none;border:1px solid var(--line);background:none;color:var(--text);border-radius:999px;padding:5px 12px;font-size:13px;font-family:inherit}
+.chip.on{background:var(--btn);color:var(--btn-text);border-color:var(--btn)}
+.card{background:var(--card);border-radius:12px;padding:12px;margin-bottom:12px}
+.next .lbl{font-size:12px;color:var(--link)}.next .big{font-size:26px;font-weight:600;color:var(--link)}
+.next .big small{font-size:14px;font-weight:400}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.bar{height:8px;border-radius:4px;background:color-mix(in srgb,var(--hint) 20%,transparent);overflow:hidden;margin:5px 0 3px}
+.bar i{display:block;height:100%;border-radius:4px}
+.pill{font-size:11px;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.p-ok{background:var(--ok-bg);color:var(--ok)}.p-low{background:var(--low-bg);color:var(--low)}
+.p-counting{border:1px solid var(--line);color:var(--hint)}.p-none{color:var(--hint)}
+.metric{margin-bottom:12px}
+.sec{font-size:12px;color:var(--hint);margin:16px 0 4px}
+.tl{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.ic{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;font-size:14px}
+.ic.milk{background:color-mix(in srgb,var(--milk) 18%,transparent)}.ic.pee{background:color-mix(in srgb,var(--pee) 18%,transparent)}.ic.poo{background:color-mix(in srgb,var(--poo) 18%,transparent)}
+.grow{flex:1}.by{color:var(--hint);font-size:12px}
+.more{display:block;width:100%;border:0;border-top:1px solid var(--line);background:none;color:var(--hint);padding:10px;font-family:inherit;font-size:13px}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{background:var(--card);border-radius:10px;padding:9px}.tile .v{font-size:20px;font-weight:600}.tile .v small{font-size:12px;font-weight:400}
+.chart{position:relative;display:flex;align-items:flex-end;gap:2px;height:110px;border-bottom:1px solid var(--line);margin-top:6px}
+.col{flex:1;height:100%;position:relative;display:flex;align-items:flex-end}
+.col .b{width:100%;border-radius:2px 2px 0 0}
+.col .tgt{position:absolute;left:-1px;right:-1px;border-top:1.5px dashed var(--hint)}
+.axis{display:flex;justify-content:space-between;font-size:11px;color:var(--hint);margin-top:3px}
+.legend{font-size:11px;color:var(--hint);display:flex;gap:10px;align-items:center}
+.sq{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:3px;vertical-align:-1px}
+.issue{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);font-size:13px}
+.issue .d{width:52px;flex:none}.issue .pills{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+.c3{display:grid;grid-template-columns:54px repeat(3,minmax(0,1fr));gap:6px;padding:9px 0;border-top:1px solid var(--line);font-size:13px;align-items:start}
+.c3 .pill{display:inline-block;margin-top:3px}
+.picker{display:flex;gap:8px;align-items:end;flex-wrap:wrap}
+.picker label{font-size:12px;color:var(--hint);display:flex;flex-direction:column;gap:3px;flex:1}
+.picker input{font:inherit;padding:7px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+.go{background:var(--btn);color:var(--btn-text);border:0;border-radius:8px;padding:9px 16px;font:inherit}
+.msg{text-align:center;color:var(--hint);padding:40px 10px}
+.err{color:var(--low);font-size:13px;margin-top:6px}
+</style>
+</head>
+<body>
+<main>
+  <div class="top"><b>มาร์ติน</b><span class="hint" id="sub"></span></div>
+  <div class="chips" id="chips"></div>
+  <div id="picker" class="card" style="display:none"></div>
+  <div id="view"><div class="msg">กำลังโหลด…</div></div>
+</main>
+<script>
+// ======== ตั้งค่า: วางลิงก์ Web app ของ Apps Script (ลงท้าย /exec) ========
+const API_URL = 'PASTE_APPS_SCRIPT_WEB_APP_URL_HERE';
+// =====================================================================
+
+const tg = window.Telegram && Telegram.WebApp;
+if (tg && tg.initData) { document.documentElement.classList.add('tg'); tg.ready(); tg.expand(); try { tg.setHeaderColor('bg_color'); } catch (e) {} }
+const CHIPS = [['today', 'วันนี้'], ['yesterday', 'เมื่อวาน'], ['3d', '3 วัน'], ['7d', '7 วัน'], ['30d', '30 วัน'], ['pick', '📅 เลือกช่วง']];
+const ICON = { milk: '🍼', pee: '💧', poo: '💩' };
+const ST = { ok: ['ถึงเกณฑ์', 'p-ok'], low: ['ต่ำกว่าเกณฑ์', 'p-low'], counting: ['กำลังนับ', 'p-counting'], none: ['ยังไม่มีน้ำหนัก', 'p-none'] };
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmt = (n) => Math.round(n).toLocaleString('en-US');
+const pill = (st, poo) => { if (poo && st === 'ok') return '<span class="pill p-ok">ปกติ</span>'; const [t, c] = ST[st] || ST.none; return `<span class="pill ${c}">${t}</span>`; };
+const watch = '<span class="pill p-low">ควรสังเกต</span>';
+const haptic = () => { try { tg && tg.HapticFeedback.selectionChanged(); } catch (e) {} };
+const dur = (m) => { m = Math.abs(m); const h = Math.floor(m / 60), x = m % 60; return (h ? h + ' ชม. ' : '') + (x || !h ? x + ' นาที' : ''); };
+
+let current = (tg && tg.initDataUnsafe && tg.initDataUnsafe.start_param) || new URLSearchParams(location.search).get('range') || 'today';
+let pickerOpen = false;
+
+function renderChips() {
+  const k = /^r\d/.test(current) ? 'pick' : current;
+  $('chips').innerHTML = CHIPS.map(([key, label]) => `<button class="chip ${key === k ? 'on' : ''}" data-k="${key}">${label}</button>`).join('');
+  $('chips').querySelectorAll('.chip').forEach((b) => b.onclick = () => {
+    haptic();
+    if (b.dataset.k === 'pick') return openPicker();
+    closePicker(); current = b.dataset.k; load();
+  });
+}
+
+function ymd(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function openPicker() {
+  pickerOpen = true;
+  const t = new Date(), f = new Date(Date.now() - 13 * 864e5);
+  $('picker').style.display = 'block';
+  $('picker').innerHTML = `<div class="picker"><label>ตั้งแต่<input type="date" id="pf" value="${ymd(f)}" max="${ymd(t)}"></label>
+    <label>ถึง<input type="date" id="pt" value="${ymd(t)}" max="${ymd(t)}"></label><button class="go" id="pgo">ดู</button></div><div class="err" id="perr"></div>`;
+  $('pgo').onclick = () => {
+    const a = $('pf').value, b = $('pt').value;
+    if (!a || !b) return ($('perr').textContent = 'เลือกวันที่ให้ครบ');
+    if (a > b) return ($('perr').textContent = 'วันเริ่มต้องมาก่อนวันสิ้นสุด');
+    current = 'r' + a.replace(/-/g, '') + '_' + b.replace(/-/g, '');
+    closePicker(); load();
+  };
+  if (tg && tg.BackButton) { tg.BackButton.show(); tg.BackButton.onClick(closePicker); }
+  renderChips();
+}
+function closePicker() {
+  pickerOpen = false; $('picker').style.display = 'none';
+  if (tg && tg.BackButton) { tg.BackButton.hide(); tg.BackButton.offClick(closePicker); }
+  renderChips();
+}
+
+async function load() {
+  renderChips();
+  $('view').innerHTML = '<div class="msg">กำลังโหลด…</div>';
+  try {
+    let data;
+    if (tg && tg.initData) {
+      const r = await fetch(API_URL + '?range=' + encodeURIComponent(current) + '&initData=' + encodeURIComponent(tg.initData));
+      data = await r.json();
+    } else if (new URLSearchParams(location.search).has('demo')) data = demo(current);
+    else data = { ok: false, msg: 'เปิดหน้านี้จากปุ่ม 📊 ในกลุ่ม Telegram' };
+    if (!data.ok) return ($('view').innerHTML = `<div class="msg">${esc(data.msg || 'โหลดไม่สำเร็จ')}</div>`);
+    render(data);
+  } catch (e) {
+    $('view').innerHTML = '<div class="msg">โหลดไม่สำเร็จ ลองใหม่อีกครั้ง</div>';
+  }
+}
+
+function render(d) {
+  const single = d.from === d.to;
+  $('sub').textContent = single ? (d.to === d.today ? 'วันนี้ ถึง ' + d.nowLabel : d.days[0].label) : d.days[0].label + ' – ' + d.toLabel;
+  if (single) return ($('view').innerHTML = dayView(d));
+  if (d.days.length === 3 && d.to === d.today) return ($('view').innerHTML = threeView(d) + issuesView(d));
+  $('view').innerHTML = rangeView(d) + issuesView(d);
+}
+
+/* ---------- 1 วัน ---------- */
+function dayView(d) {
+  const r = d.days[0], isToday = d.to === d.today; let h = '';
+  if (isToday && d.nextFeed) {
+    const n = d.nextFeed, late = n.inMin < 0;
+    h += `<div class="card next"><div class="lbl">มื้อถัดไป</div><div class="big">${n.due} <small>${late ? 'เลยมา ' + dur(n.inMin) : 'อีก ' + dur(n.inMin)}</small></div>
+      <div class="lbl">มื้อล่าสุด ${n.last.time} · ${n.last.ml} ml · โดย ${esc(n.last.by)}</div></div>`;
+  }
+  if (r.beforeStart) return h + '<div class="msg">ยังไม่เริ่มบันทึกในวันนี้</div>';
+  const tl = d.timeline || [];
+  const lastOf = (type) => tl.find((e) => e.type === type);
+  const lp = lastOf('pee'), lo = lastOf('poo');
+  const pct = (a, b) => Math.min(100, b ? Math.round(a / b * 100) : 0);
+  h += `<div class="metric"><div class="row"><span>🍼 นม ${fmt(r.milkMl)}${r.target ? ' / ' + fmt(r.target) : ''} ml <span class="by">· ${r.feeds} มื้อ</span></span>${pill(r.milkStatus)}</div>
+    <div class="bar"><i style="width:${pct(r.milkMl, r.target)}%;background:var(--milk)"></i></div>
+    <div class="hint">${r.target ? (r.milkMl < r.target ? 'ขาดอีก ' + fmt(r.target - r.milkMl) + ' ml · ' : '') + 'เกณฑ์ ' + (r.projectedG / 1000).toFixed(2).replace(/0$/, '') + ' kg × ' + (d.settings ? d.settings.mlPerKg : 150) + ' (~' + r.perMeal + ' ml/มื้อ)' : 'ยังไม่มีน้ำหนักลูก'}</div></div>`;
+  h += `<div class="metric"><div class="row"><span>💧 ฉี่ ${r.pee} / ${r.peeMin} ครั้ง</span>${pill(r.peeStatus)}</div>
+    <div class="bar"><i style="width:${pct(r.pee, r.peeMin)}%;background:var(--pee)"></i></div>
+    <div class="hint">${lp ? 'ฉี่ล่าสุด ' + lp.time + ' · โดย ' + esc(lp.by) : 'ยังไม่มีฉี่'}</div></div>`;
+  const pk = [r.loose ? 'เหลว ' + r.loose : '', r.hard ? 'แข็ง ' + r.hard : ''].filter(Boolean).join(', ');
+  h += `<div class="metric"><div class="row"><span>💩 อึ ${r.poo} / ${r.pooMin} ครั้ง${pk ? ' · ' + pk : ''}</span><span>${r.pooWatch ? watch : ''} ${!r.pooWatch || r.pooStatus === 'low' ? pill(r.pooStatus, true) : ''}</span></div>
+    <div class="hint">${lo ? 'อึล่าสุด ' + lo.time + ' (' + esc(lo.kind) + ') · โดย ' + esc(lo.by) : 'ยังไม่มีอึ'}</div></div>`;
+  h += `<div class="sec">ไทม์ไลน์${isToday ? 'วันนี้' : ''}</div>`;
+  if (!tl.length) return h + '<div class="hint">ยังไม่มีรายการ</div>';
+  const item = (e) => `<div class="tl"><span class="ic ${e.type}">${ICON[e.type]}</span><span class="grow">${e.time} ${e.type === 'milk' ? 'นม ' + e.ml + ' ml' : e.type === 'pee' ? 'ฉี่' : 'อึ · ' + esc(e.kind)}</span><span class="by">${esc(e.by)}</span></div>`;
+  h += tl.slice(0, 8).map(item).join('');
+  if (tl.length > 8) h += `<div id="rest" style="display:none">${tl.slice(8).map(item).join('')}</div><button class="more" onclick="this.previousElementSibling.style.display='block';this.remove()">ดูทั้งหมด (${tl.length}) ▾</button>`;
+  return h;
+}
+
+/* ---------- 3 วัน ---------- */
+function threeView(d) {
+  const ds = d.days;
+  const head = `<div class="c3" style="border-top:0;color:var(--hint);font-size:12px"><span></span>${ds.map((r) => `<span>${r.label}${r.day === d.today ? ' วันนี้' : ''}</span>`).join('')}</div>`;
+  const cell = (r, fn) => r.beforeStart ? '<span class="hint">ยังไม่เริ่ม</span>' : `<span>${fn(r)}</span>`;
+  const milk = (r) => `${fmt(r.milkMl)} ml<br><span class="hint">${r.feeds} มื้อ</span><br>${pill(r.milkStatus)}`;
+  const pee = (r) => `${r.pee} ครั้ง<br>${pill(r.peeStatus)}`;
+  const poo = (r) => `${r.poo} ครั้ง${r.loose + r.hard ? `<br><span class="hint">${[r.loose ? 'เหลว ' + r.loose : '', r.hard ? 'แข็ง ' + r.hard : ''].filter(Boolean).join(', ')}</span>` : ''}<br>${r.pooWatch ? watch : pill(r.pooStatus, true)}`;
+  const t = ds[ds.length - 1];
+  return head +
+    `<div class="c3"><span>🍼 นม</span>${ds.map((r) => cell(r, milk)).join('')}</div>` +
+    `<div class="c3"><span>💧 ฉี่</span>${ds.map((r) => cell(r, pee)).join('')}</div>` +
+    `<div class="c3"><span>💩 อึ</span>${ds.map((r) => cell(r, poo)).join('')}</div>` +
+    `<div class="hint" style="margin-top:6px">เกณฑ์วันนี้ นม ${t.target ? fmt(t.target) : '-'} ml/วัน · ฉี่ ${t.peeMin} ครั้ง · อึ ${t.pooMin} ครั้ง</div>`;
+}
+
+/* ---------- 7/30 วัน/เลือกช่วง ---------- */
+function rangeView(d) {
+  const done = d.days.filter((r) => r.complete && !r.beforeStart);
+  const n = done.length, c = (f) => done.filter(f).length;
+  let h = `<div class="tiles">
+    <div class="tile"><div class="hint">นมถึงเกณฑ์</div><div class="v">${c((r) => r.milkStatus === 'ok')}<small>/${n} วัน</small></div></div>
+    <div class="tile"><div class="hint">ฉี่ถึงเกณฑ์</div><div class="v">${c((r) => r.peeStatus === 'ok')}<small>/${n} วัน</small></div></div>
+    <div class="tile"><div class="hint">อึปกติ</div><div class="v">${c((r) => r.pooStatus === 'ok' && !r.pooWatch)}<small>/${n} วัน</small></div></div></div>`;
+  if (d.to === d.today) h += '<div class="hint" style="margin-top:4px">ไม่นับวันนี้ เพราะวันยังไม่จบ</div>';
+  const max = Math.max(1, ...d.days.map((r) => Math.max(r.milkMl, r.target || 0))) * 1.08;
+  h += `<div class="row" style="margin-top:14px"><span class="hint">นมรวมต่อวัน (ml)</span><span class="legend"><span><i class="sq" style="background:var(--milk)"></i>ถึง</span><span><i class="sq" style="background:var(--low)"></i>ต่ำกว่า</span><span>- - เกณฑ์</span></span></div>`;
+  h += '<div class="chart">' + d.days.map((r) => {
+    const col = r.beforeStart ? 'transparent' : r.milkStatus === 'ok' ? 'var(--milk)' : r.milkStatus === 'low' ? 'var(--low)' : 'color-mix(in srgb,var(--milk) 45%,transparent)';
+    const tgt = r.target && !r.beforeStart ? `<span class="tgt" style="bottom:${(r.target / max * 100).toFixed(1)}%"></span>` : '';
+    return `<div class="col" title="${r.label}: ${fmt(r.milkMl)}${r.target ? ' / ' + fmt(r.target) : ''} ml"><div class="b" style="height:${(r.milkMl / max * 100).toFixed(1)}%;background:${col}"></div>${tgt}</div>`;
+  }).join('') + '</div>';
+  const L = d.days, mid = L[Math.floor((L.length - 1) / 2)];
+  h += `<div class="axis"><span>${L[0].label}</span>${L.length > 2 ? `<span>${mid.label}</span>` : ''}<span>${L[L.length - 1].label}</span></div>`;
+  return h;
+}
+
+function issuesView(d) {
+  const rows = d.days.filter((r) => r.complete && !r.beforeStart &&
+    (r.milkStatus === 'low' || r.peeStatus === 'low' || r.pooStatus === 'low' || r.pooWatch)).reverse();
+  let h = '<div class="sec">วันที่ต่ำกว่าเกณฑ์ / ควรสังเกต</div>';
+  if (!rows.length) return h + '<div class="hint" style="padding:8px 0">ถึงเกณฑ์ทุกวันในช่วงนี้ ✅</div>';
+  return h + rows.map((r) => {
+    const det = [], pills = [];
+    if (r.milkStatus === 'low') { det.push('นม ' + fmt(r.milkMl) + '/' + fmt(r.target) + ' ml'); pills.push('<span class="pill p-low">นมต่ำกว่าเกณฑ์</span>'); }
+    if (r.peeStatus === 'low') { det.push('ฉี่ ' + r.pee + ' ครั้ง'); pills.push('<span class="pill p-low">ฉี่ต่ำกว่าเกณฑ์</span>'); }
+    if (r.pooStatus === 'low') { det.push('อึ ' + r.poo + ' ครั้ง'); pills.push('<span class="pill p-low">อึต่ำกว่าเกณฑ์</span>'); }
+    if (r.pooWatch) { det.push([r.loose ? 'อึเหลว ' + r.loose : '', r.hard ? 'อึแข็ง ' + r.hard : ''].filter(Boolean).join(', ') + ' ครั้ง'); pills.push('<span class="pill p-low">อึควรสังเกต</span>'); }
+    return `<div class="issue"><span class="d">${r.label}</span><span class="grow">${det.join(' · ')}</span><span class="pills">${pills.length > 2 ? `<span class="pill p-low">${pills.length} รายการ</span>` : pills.join('')}</span></div>`;
+  }).join('');
+}
+
+/* ---------- ข้อมูลตัวอย่าง (?demo=1 เมื่อเปิดนอก Telegram) ---------- */
+function demo(key) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const lab = (dt) => dt.getDate() + ' ' + ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'][dt.getMonth()];
+  const n = { today: 1, yesterday: 1, '3d': 3, '7d': 7, '30d': 30 }[key] || 14, end = key === 'yesterday' ? -1 : 0;
+  const days = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const dt = new Date(today.getTime() - (i - end) * 864e5), complete = i - end > 0 || end < 0, s = (i * 7) % 5;
+    const target = 375 + Math.floor((30 - i) / 10) * 33, milk = complete ? target - 40 + s * 25 : Math.round(target * 0.6);
+    const pee = complete ? 6 + (s % 3) : 4, poo = complete ? 1 + (s % 3) : 2, loose = s === 4 ? 1 : 0;
+    days.push({ day: ymd(dt), label: lab(dt), complete, milkMl: milk, feeds: complete ? 9 : 5, target, perMeal: Math.round(target / 9), projectedG: target / 0.15,
+      pee, peeMin: 7, poo, pooMin: 2, loose, hard: 0, beforeStart: false,
+      milkStatus: milk >= target ? 'ok' : complete ? 'low' : 'counting', peeStatus: pee >= 7 ? 'ok' : complete ? 'low' : 'counting',
+      pooStatus: poo >= 2 ? 'ok' : complete ? 'low' : 'counting', pooWatch: loose > 0 });
+  }
+  const tl = [{ time: '14:30', type: 'milk', ml: 42, by: 'แม่' }, { time: '13:50', type: 'pee', by: 'พ่อ' }, { time: '12:10', type: 'poo', kind: 'เหลว', by: 'ย่า' },
+    { time: '11:30', type: 'milk', ml: 45, by: 'พ่อ' }];
+  const t = days[days.length - 1];
+  return { ok: true, today: ymd(today), nowLabel: '15:42', from: days[0].day, to: t.day, toLabel: t.label + ' 69', days,
+    timeline: n === 1 ? tl : undefined, settings: { mlPerKg: 150 },
+    nextFeed: key === 'today' ? { due: '17:00', inMin: 78, last: { time: '14:30', ml: 42, by: 'แม่' } } : undefined };
+}
+
+load();
+</script>
+</body>
+</html>
