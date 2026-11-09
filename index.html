@@ -56,6 +56,12 @@ main{max-width:520px;margin:0 auto;padding:12px 14px 40px}
 .picker input{font:inherit;padding:7px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
 .go{background:var(--btn);color:var(--btn-text);border:0;border-radius:8px;padding:9px 16px;font:inherit}
 .msg{text-align:center;color:var(--hint);padding:40px 10px}
+.tl.edit{cursor:pointer}.tl .pen{color:var(--hint);font-size:12px}
+.ed{background:var(--card);border-radius:10px;padding:10px;margin:2px 0 8px;display:flex;flex-wrap:wrap;gap:8px;align-items:end}
+.ed label{font-size:12px;color:var(--hint);display:flex;flex-direction:column;gap:3px}
+.ed input,.ed select{font:inherit;padding:6px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--text);width:100px}
+.ed .row2{display:flex;gap:6px;width:100%}.ed button{font:inherit;border-radius:8px;padding:7px 12px;border:1px solid var(--line);background:none;color:var(--text)}
+.ed .save{background:var(--btn);color:var(--btn-text);border:0}.ed .del{color:var(--low);margin-left:auto}
 .err{color:var(--low);font-size:13px;margin-top:6px}
 </style>
 </head>
@@ -140,7 +146,7 @@ async function load() {
 function render(d) {
   const single = d.from === d.to;
   $('sub').textContent = single ? (d.to === d.today ? 'วันนี้ ถึง ' + d.nowLabel : d.days[0].label) : d.days[0].label + ' – ' + d.toLabel;
-  if (single) return ($('view').innerHTML = dayView(d));
+  if (single) { $('view').innerHTML = dayView(d); bindEdit(d); return; }
   if (d.days.length === 3 && d.to === d.today) return ($('view').innerHTML = threeView(d) + issuesView(d));
   $('view').innerHTML = rangeView(d) + issuesView(d);
 }
@@ -169,7 +175,9 @@ function dayView(d) {
     <div class="hint">${lo ? 'อึล่าสุด ' + lo.time + ' (' + esc(lo.kind) + ') · โดย ' + esc(lo.by) : 'ยังไม่มีอึ'}</div></div>`;
   h += `<div class="sec">ไทม์ไลน์${isToday ? 'วันนี้' : ''}</div>`;
   if (!tl.length) return h + '<div class="hint">ยังไม่มีรายการ</div>';
-  const item = (e) => `<div class="tl"><span class="ic ${e.type}">${ICON[e.type]}</span><span class="grow">${e.time} ${e.type === 'milk' ? 'นม ' + e.ml + ' ml' : e.type === 'pee' ? 'ฉี่' : 'อึ · ' + esc(e.kind)}</span><span class="by">${esc(e.by)}</span></div>`;
+  const item = (e) => `<div class="tl${d.canEdit ? ' edit' : ''}" data-id="${esc(e.id)}"><span class="ic ${e.type}">${ICON[e.type]}</span><span class="grow">${e.time} ${e.type === 'milk' ? 'นม ' + e.ml + ' ml' : e.type === 'pee' ? 'ฉี่' : 'อึ · ' + esc(e.kind)}</span><span class="by">${esc(e.by)}</span>${d.canEdit ? '<span class="pen">✏️</span>' : ''}</div>`;
+  window.__tl = tl;
+  if (d.canEdit) h += '<div class="hint" style="margin-bottom:2px">แตะรายการเพื่อแก้ไขหรือลบ</div>';
   h += tl.slice(0, 8).map(item).join('');
   if (tl.length > 8) h += `<div id="rest" style="display:none">${tl.slice(8).map(item).join('')}</div><button class="more" onclick="this.previousElementSibling.style.display='block';this.remove()">ดูทั้งหมด (${tl.length}) ▾</button>`;
   return h;
@@ -227,6 +235,41 @@ function issuesView(d) {
   }).join('');
 }
 
+/* ---------- แก้ไข/ลบ (วันนี้, เมื่อวาน) ---------- */
+function bindEdit(d) {
+  if (!d.canEdit) return;
+  document.querySelectorAll('.tl.edit').forEach((row) => row.onclick = () => openEditor(row));
+}
+function openEditor(row) {
+  document.querySelectorAll('.ed').forEach((x) => x.remove());
+  const e = (window.__tl || []).find((x) => x.id === row.dataset.id); if (!e) return;
+  haptic();
+  const ed = document.createElement('div'); ed.className = 'ed';
+  ed.innerHTML = `<label>เวลา<input type="time" id="edT" value="${e.time}"></label>` +
+    (e.type === 'milk' ? `<label>ml<input type="number" id="edM" min="1" max="500" inputmode="numeric" value="${e.ml}"></label>` : '') +
+    (e.type === 'poo' ? `<label>ลักษณะ<select id="edK">${['normal', 'loose', 'hard'].map((k, i) => `<option value="${k}" ${k === e.kindCode ? 'selected' : ''}>${['ปกติ', 'เหลว', 'แข็ง'][i]}</option>`).join('')}</select></label>` : '') +
+    `<div class="row2"><button class="save" id="edS">บันทึก</button><button id="edC">ยกเลิก</button><button class="del" id="edD">ลบ</button></div><div class="err" id="edE" style="width:100%"></div>`;
+  row.after(ed);
+  $('edC').onclick = () => ed.remove();
+  $('edS').onclick = () => sendEdit({ action: 'update', id: e.id, time: $('edT').value, ml: $('edM') ? Number($('edM').value) : undefined, kind: $('edK') ? $('edK').value : undefined });
+  $('edD').onclick = () => {
+    const go = () => sendEdit({ action: 'delete', id: e.id });
+    const q = 'ลบ ' + e.time + ' ' + (e.type === 'milk' ? 'นม ' + e.ml + ' ml' : e.type === 'pee' ? 'ฉี่' : 'อึ') + ' ?';
+    if (tg && tg.initData && tg.showConfirm) tg.showConfirm(q, (ok) => ok && go()); else if (confirm(q)) go();
+  };
+}
+async function sendEdit(body) {
+  const err = $('edE'); if (err) err.textContent = 'กำลังบันทึก…';
+  try {
+    if (!(tg && tg.initData)) throw new Error('เปิดจาก Telegram เพื่อแก้ไข');
+    const r = await fetch(API_URL + '?api=1', { method: 'POST', body: JSON.stringify(Object.assign({ initData: tg.initData }, body)) });
+    const j = await r.json();
+    if (!j.ok) { if (err) err.textContent = j.msg || 'แก้ไม่สำเร็จ'; return; }
+    try { tg.HapticFeedback.notificationOccurred('success'); } catch (e) {}
+    load();
+  } catch (e) { if (err) err.textContent = e.message || 'แก้ไม่สำเร็จ ลองใหม่อีกครั้ง'; }
+}
+
 /* ---------- ข้อมูลตัวอย่าง (?demo=1 เมื่อเปิดนอก Telegram) ---------- */
 function demo(key) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -242,11 +285,11 @@ function demo(key) {
       milkStatus: milk >= target ? 'ok' : complete ? 'low' : 'counting', peeStatus: pee >= 7 ? 'ok' : complete ? 'low' : 'counting',
       pooStatus: poo >= 2 ? 'ok' : complete ? 'low' : 'counting', pooWatch: loose > 0 });
   }
-  const tl = [{ time: '14:30', type: 'milk', ml: 42, by: 'แม่' }, { time: '13:50', type: 'pee', by: 'พ่อ' }, { time: '12:10', type: 'poo', kind: 'เหลว', by: 'ย่า' },
-    { time: '11:30', type: 'milk', ml: 45, by: 'พ่อ' }];
+  const tl = [{ id: 'E4', time: '14:30', type: 'milk', ml: 42, by: 'แม่' }, { id: 'E3', time: '13:50', type: 'pee', by: 'พ่อ' }, { id: 'E2', time: '12:10', type: 'poo', kind: 'เหลว', kindCode: 'loose', by: 'ย่า' },
+    { id: 'E1', time: '11:30', type: 'milk', ml: 45, by: 'พ่อ' }];
   const t = days[days.length - 1];
   return { ok: true, today: ymd(today), nowLabel: '15:42', from: days[0].day, to: t.day, toLabel: t.label + ' 69', days,
-    timeline: n === 1 ? tl : undefined, settings: { mlPerKg: 150 },
+    timeline: n === 1 ? tl : undefined, canEdit: n === 1, settings: { mlPerKg: 150 },
     nextFeed: key === 'today' ? { due: '17:00', inMin: 78, last: { time: '14:30', ml: 42, by: 'แม่' } } : undefined };
 }
 
